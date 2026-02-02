@@ -1,51 +1,74 @@
-LUAGUI_NAME = "Slow 2 -> Magic Form (Fixed Addr)"
+LUAGUI_NAME = "Bleach Forms (Hardcoded)"
 LUAGUI_AUTH = "Gemini"
-LUAGUI_DESC = "Swap zu _MAGF via Slow 2 (Addr 9ABE50)"
+LUAGUI_DESC = "Checks fixed addresses for Slow2/3 (No Scan)"
 
 -- ==========================================
 -- FESTE ADRESSEN (STEAM)
 -- ==========================================
 
-local ABILITY_ADDR = 0x9ABE50   -- Adresse für Slow 2
-local MODEL_ADDR   = 0x2A268C0  -- Adresse für P_EX100
+local MODEL_ADDR = 0x2A268C0
 
--- ID Prüfung
--- 33213 = 0x81BD (ID 445 + Equipped Flag 0x8000)
-local EQUIPPED_VALUE = 33213 
+-- 1. SLOW 3 (ID 195) -> HOLLOW FORM (_HOLL)
+-- Adresse aus deinem Screenshot: ...exe + 9ABE6E
+local ADDR_HOLL = 0x9ABE6E 
+local VAL_HOLL  = 32963    -- 195 + 32768 (Equipped)
 
--- Zustands-Speicher
+-- 2. SLOW 2 (ID 445) -> BANKAI FORM (_BANK)
+-- Adresse aus deinem Screenshot: ...exe + 9ABE50
+local ADDR_BANK = 0x9ABE50 
+local VAL_BANK  = 33213    -- 445 + 32768 (Equipped)
+
+-- 3. REFLECT DUMMY (ID 248) -> MASKED FORM (_MASK)
+-- Noch unbekannt! Suche in CE nach 248 (2 Bytes)
+local ADDR_MASK = 0x000000 -- <--- HIER ADRESSE EINTRAGEN
+local VAL_MASK  = 33016    -- 248 + 32768
+
+-- 4. UPPER DUMMY (ID 249) -> SHIKAI FORM (_SHIK)
+-- Noch unbekannt! Suche in CE nach 249 (2 Bytes)
+local ADDR_SHIK = 0x000000 -- <--- HIER ADRESSE EINTRAGEN
+local VAL_SHIK  = 33017    -- 249 + 32768
+
+-- ==========================================
+
 local currentWrittenSuffix = "NONE"
 
 function _OnInit()
-    ConsolePrint("Model Swap gestartet.")
-    ConsolePrint("Ability Addr: " .. string.format("%X", ABILITY_ADDR))
-    ConsolePrint("Model Addr:   " .. string.format("%X", MODEL_ADDR))
+    ConsolePrint("Bleach Hardcoded Mod gestartet.")
+    ConsolePrint("Hollow Addr: " .. string.format("%X", ADDR_HOLL))
+    ConsolePrint("Bankai Addr: " .. string.format("%X", ADDR_BANK))
 end
 
 function _OnFrame()
-    -- 1. Ability-Status lesen (2 Bytes)
-    local val = ReadShort(ABILITY_ADDR)
-    
     local targetSuffix = ""
+    local activeForm = "Base"
 
-    -- 2. Logik: Ist Slow 2 ausgerüstet?
-    if val == EQUIPPED_VALUE then
-        targetSuffix = "_MAGF" -- Magic Form Look
-    else
-        targetSuffix = "" -- Base Look (P_EX100)
+    -- LOGIK & PRIORITÄT (Oben gewinnt)
+    
+    -- 1. HOLLOW (Slow 3)
+    if IsEquipped(ADDR_HOLL, VAL_HOLL) then
+        targetSuffix = "_HOLL"
+        activeForm = "Hollow"
+
+    -- 2. BANKAI (Slow 2)
+    elseif IsEquipped(ADDR_BANK, VAL_BANK) then
+        targetSuffix = "_BANK"
+        activeForm = "Bankai"
+
+    -- 3. MASKED (Reflect Dummy) - Nur wenn Adresse eingetragen
+    elseif ADDR_MASK ~= 0 and IsEquipped(ADDR_MASK, VAL_MASK) then
+        targetSuffix = "_MASK"
+        activeForm = "Masked"
+
+    -- 4. SHIKAI (Upper Dummy) - Nur wenn Adresse eingetragen
+    elseif ADDR_SHIK ~= 0 and IsEquipped(ADDR_SHIK, VAL_SHIK) then
+        targetSuffix = "_SHIK"
+        activeForm = "Shikai"
     end
 
-    -- 3. Schreiben (Nur bei Änderung)
+    -- SCHREIBEN
     if targetSuffix ~= currentWrittenSuffix then
         WriteModelString(targetSuffix)
-        
-        -- Konsolen-Feedback
-        if targetSuffix == "_MAGF" then
-            ConsolePrint("Slow 2 AN -> Model: Magic Form")
-        elseif currentWrittenSuffix ~= "NONE" then
-            ConsolePrint("Slow 2 AUS -> Model: Base")
-        end
-        
+        ConsolePrint("Wechsel zu: " .. activeForm .. " (" .. (targetSuffix == "" and "Base" or targetSuffix) .. ")")
         currentWrittenSuffix = targetSuffix
     end
 end
@@ -54,17 +77,27 @@ end
 -- HILFSFUNKTIONEN
 -- =====================================================================
 
+function IsEquipped(addr, targetVal)
+    -- Sicherstellen, dass Adresse gültig ist
+    if addr == 0 then return false end
+    
+    -- Wert lesen
+    local val = ReadShort(addr)
+    
+    -- Prüfen (Exakter Match auf "Equipped Value")
+    if val == targetVal then
+        return true
+    end
+    return false
+end
+
 function WriteModelString(suffix)
-    -- Wir schreiben direkt an Adresse + 7 (hinter "P_EX100")
     local writeAddr = MODEL_ADDR + 7
     
     if suffix == "" then
-        -- Reset: Null-Byte schreiben (String endet hier)
         WriteByte(writeAddr, 0)
     else
-        -- Suffix schreiben
         WriteString(writeAddr, suffix)
-        -- Null-Terminator dahinter setzen
         WriteByte(writeAddr + string.len(suffix), 0)
     end
 end
