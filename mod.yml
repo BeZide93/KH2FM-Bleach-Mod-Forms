@@ -12,6 +12,15 @@ assets:
     source:
     - name: battle/fmlv
       type: fmlv
+- name: 03system.bin
+  method: binarc
+  source:
+  - name: item
+    type: list
+    method: listpatch
+    source:
+    - name: system/item.yml
+      type: item
 - name: scripts/ModelSwap.lua
   method: copy
   source:

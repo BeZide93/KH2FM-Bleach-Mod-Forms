@@ -1,94 +1,103 @@
-LUAGUI_NAME = "Bleach Forms (Hardcoded)"
+LUAGUI_NAME = "Bleach Forms (Micro Scan)"
 LUAGUI_AUTH = "Gemini"
-LUAGUI_DESC = "Checks fixed addresses for Slow2/3 (No Scan)"
+LUAGUI_DESC = "Scannt 0x9ABDF4 - 0x9ABEB4"
 
 -- ==========================================
--- FESTE ADRESSEN (STEAM)
+-- KONFIGURATION
 -- ==========================================
 
+-- 1. Feste Model-Adresse (Sora P_EX100)
 local MODEL_ADDR = 0x2A268C0
 
--- 1. SLOW 3 (ID 195) -> HOLLOW FORM (_HOLL)
--- Adresse aus deinem Screenshot: ...exe + 9ABE6E
-local ADDR_HOLL = 0x9ABE6E 
-local VAL_HOLL  = 32963    -- 195 + 32768 (Equipped)
+-- 2. Micro Scan-Bereich (Dein definierter Bereich)
+-- Wir starten bei ..F4 (gerade Zahl), damit wir ..E50 auch treffen.
+local SCAN_START = 0x9ABDF4 
+local SCAN_END   = 0x9ABEB4 
 
--- 2. SLOW 2 (ID 445) -> BANKAI FORM (_BANK)
--- Adresse aus deinem Screenshot: ...exe + 9ABE50
-local ADDR_BANK = 0x9ABE50 
-local VAL_BANK  = 33213    -- 445 + 32768 (Equipped)
+-- 3. Form Definitionen (Priorität: Oben = Wichtiger)
+local FORMS = {
+    -- 1. Hollow (Slow 3 - ID 195)
+    { name = "Hollow", suffix = "_HOLL", id = 195 },
 
--- 3. REFLECT DUMMY (ID 248) -> MASKED FORM (_MASK)
--- Noch unbekannt! Suche in CE nach 248 (2 Bytes)
-local ADDR_MASK = 0x000000 -- <--- HIER ADRESSE EINTRAGEN
-local VAL_MASK  = 33016    -- 248 + 32768
+    -- 2. Bankai (Slow 2 - ID 445)
+    { name = "Bankai", suffix = "_BANK", id = 445 },
 
--- 4. UPPER DUMMY (ID 249) -> SHIKAI FORM (_SHIK)
--- Noch unbekannt! Suche in CE nach 249 (2 Bytes)
-local ADDR_SHIK = 0x000000 -- <--- HIER ADRESSE EINTRAGEN
-local VAL_SHIK  = 33017    -- 249 + 32768
+    -- 3. Masked (Reflect Dummy - ID 248)
+    { name = "Masked", suffix = "_MASK", id = 248 },
 
+    -- 4. Shikai (Upper Dummy - ID 249)
+    { name = "Shikai", suffix = "_SHIK", id = 249 }
+}
+
+-- ==========================================
+-- SYSTEM VARIABLEN
 -- ==========================================
 
 local currentWrittenSuffix = "NONE"
+local scanTimer = 0
+local activeSuffix = ""
+local activeFormName = "Base"
 
 function _OnInit()
-    ConsolePrint("Bleach Hardcoded Mod gestartet.")
-    ConsolePrint("Hollow Addr: " .. string.format("%X", ADDR_HOLL))
-    ConsolePrint("Bankai Addr: " .. string.format("%X", ADDR_BANK))
+    ConsolePrint("Bleach Mod (Micro Scan) gestartet.")
+    ConsolePrint("Scan-Bereich: 9ABDF4 - 9ABEB4")
 end
 
 function _OnFrame()
-    local targetSuffix = ""
-    local activeForm = "Base"
-
-    -- LOGIK & PRIORITÄT (Oben gewinnt)
-    
-    -- 1. HOLLOW (Slow 3)
-    if IsEquipped(ADDR_HOLL, VAL_HOLL) then
-        targetSuffix = "_HOLL"
-        activeForm = "Hollow"
-
-    -- 2. BANKAI (Slow 2)
-    elseif IsEquipped(ADDR_BANK, VAL_BANK) then
-        targetSuffix = "_BANK"
-        activeForm = "Bankai"
-
-    -- 3. MASKED (Reflect Dummy) - Nur wenn Adresse eingetragen
-    elseif ADDR_MASK ~= 0 and IsEquipped(ADDR_MASK, VAL_MASK) then
-        targetSuffix = "_MASK"
-        activeForm = "Masked"
-
-    -- 4. SHIKAI (Upper Dummy) - Nur wenn Adresse eingetragen
-    elseif ADDR_SHIK ~= 0 and IsEquipped(ADDR_SHIK, VAL_SHIK) then
-        targetSuffix = "_SHIK"
-        activeForm = "Shikai"
+    -- 1. Scan Interval (alle 10 Frames)
+    scanTimer = scanTimer + 1
+    if scanTimer > 10 then
+        scanTimer = 0
+        ScanForAbilities()
     end
 
-    -- SCHREIBEN
-    if targetSuffix ~= currentWrittenSuffix then
-        WriteModelString(targetSuffix)
-        ConsolePrint("Wechsel zu: " .. activeForm .. " (" .. (targetSuffix == "" and "Base" or targetSuffix) .. ")")
-        currentWrittenSuffix = targetSuffix
+    -- 2. Schreiben (Nur bei Änderung)
+    if activeSuffix ~= currentWrittenSuffix then
+        WriteModelString(activeSuffix)
+        
+        if activeSuffix ~= "" then
+            ConsolePrint("Wechsel zu: " .. activeFormName .. " (" .. activeSuffix .. ")")
+        end
+        
+        currentWrittenSuffix = activeSuffix
     end
 end
 
 -- =====================================================================
--- HILFSFUNKTIONEN
+-- LOGIK & SCANNER
 -- =====================================================================
 
-function IsEquipped(addr, targetVal)
-    -- Sicherstellen, dass Adresse gültig ist
-    if addr == 0 then return false end
-    
-    -- Wert lesen
-    local val = ReadShort(addr)
-    
-    -- Prüfen (Exakter Match auf "Equipped Value")
-    if val == targetVal then
-        return true
+function ScanForAbilities()
+    local foundForm = nil
+    local equippedIDs = {}
+
+    -- Micro Scan
+    for addr = SCAN_START, SCAN_END, 2 do
+        local val = ReadShort(addr)
+        
+        -- Check: Ist Bit 0x8000 (32768) gesetzt?
+        if val > 32768 then
+            local rawID = val - 32768
+            equippedIDs[rawID] = true
+        end
     end
-    return false
+
+    -- Prioritäten-Check
+    for _, form in ipairs(FORMS) do
+        if equippedIDs[form.id] then
+            foundForm = form
+            break 
+        end
+    end
+
+    -- Ergebnis
+    if foundForm then
+        activeSuffix = foundForm.suffix
+        activeFormName = foundForm.name
+    else
+        activeSuffix = ""
+        activeFormName = "Base"
+    end
 end
 
 function WriteModelString(suffix)
