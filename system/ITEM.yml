@@ -11,7 +11,7 @@ Items:
 - Id: 0x00F9
   Type: Ability
   Flag0: 0x01
-  Flag1: 0xFE
+  Flag1: 0x12
   StatEntry: 0x0700
   Name: 0xB789
   Description: 0xB78A
