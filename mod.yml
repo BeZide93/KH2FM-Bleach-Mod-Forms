@@ -202,3 +202,51 @@ assets:
   method: copy
   source:
   - name: remastered/obj/P_EX100_SHIK.a.us/-8.dds
+
+# === Text Files === #
+
+- name: msg/us/sys.bar
+  method: binarc
+  source:
+  - name: sys
+    type: list
+    method: kh2msg
+    source:
+    - name: textfiles/sys.yml
+      language: en
+- name: msg/fr/sys.bar
+  method: binarc
+  source:
+  - name: sys
+    type: list
+    method: kh2msg
+    source:
+    - name: textfiles/sys.yml
+      language: fr
+- name: msg/sp/sys.bar
+  method: binarc
+  source:
+  - name: sys
+    type: list
+    method: kh2msg
+    source:
+    - name: textfiles/sys.yml
+      language: sp
+- name: msg/it/sys.bar
+  method: binarc
+  source:
+  - name: sys
+    type: list
+    method: kh2msg
+    source:
+    - name: textfiles/sys.yml
+      language: it
+- name: msg/gr/sys.bar
+  method: binarc
+  source:
+  - name: sys
+    type: list
+    method: kh2msg
+    source:
+    - name: textfiles/sys.yml
+      language: gr
