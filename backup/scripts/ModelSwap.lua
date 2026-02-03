@@ -1,6 +1,6 @@
-LUAGUI_NAME = "Bleach Forms (New IDs)"
+LUAGUI_NAME = "Bleach Forms (Micro Scan)"
 LUAGUI_AUTH = "Gemini"
-LUAGUI_DESC = "Scannt 457-460 in 9ABDF4-9ABEB4"
+LUAGUI_DESC = "Scannt 0x9ABDF4 - 0x9ABEB4"
 
 -- ==========================================
 -- KONFIGURATION
@@ -9,23 +9,24 @@ LUAGUI_DESC = "Scannt 457-460 in 9ABDF4-9ABEB4"
 -- 1. Feste Model-Adresse (Sora P_EX100)
 local MODEL_ADDR = 0x2A268C0
 
--- 2. Micro Scan-Bereich
+-- 2. Micro Scan-Bereich (Dein definierter Bereich)
+-- Wir starten bei ..F4 (gerade Zahl), damit wir ..E50 auch treffen.
 local SCAN_START = 0x9ABDF4 
 local SCAN_END   = 0x9ABEB4 
 
 -- 3. Form Definitionen (Priorität: Oben = Wichtiger)
 local FORMS = {
-    -- 1. Hollow (ID 460)
-    { name = "Hollow", suffix = "_HOLL", id = 460 },
+    -- 1. Hollow (Slow 3 - ID 195)
+    { name = "Hollow", suffix = "_HOLL", id = 195 },
 
-    -- 2. Bankai (ID 458)
-    { name = "Bankai", suffix = "_BANK", id = 458 },
+    -- 2. Bankai (Slow 2 - ID 445)
+    { name = "Bankai", suffix = "_BANK", id = 445 },
 
-    -- 3. Masked (ID 459)
-    { name = "Masked", suffix = "_MASK", id = 459 },
+    -- 3. Masked (Reflect Dummy - ID 248)
+    { name = "Masked", suffix = "_MASK", id = 248 },
 
-    -- 4. Shikai (ID 457)
-    { name = "Shikai", suffix = "_SHIK", id = 457 }
+    -- 4. Shikai (Upper Dummy - ID 249)
+    { name = "Shikai", suffix = "_SHIK", id = 249 }
 }
 
 -- ==========================================
@@ -38,7 +39,8 @@ local activeSuffix = ""
 local activeFormName = "Base"
 
 function _OnInit()
-    ConsolePrint("Bleach Mod (New IDs) gestartet.")
+    ConsolePrint("Bleach Mod (Micro Scan) gestartet.")
+    ConsolePrint("Scan-Bereich: 9ABDF4 - 9ABEB4")
 end
 
 function _OnFrame()
@@ -80,7 +82,7 @@ function ScanForAbilities()
         end
     end
 
-    -- Prioritäten-Check (Hollow > Bankai > Masked > Shikai)
+    -- Prioritäten-Check
     for _, form in ipairs(FORMS) do
         if equippedIDs[form.id] then
             foundForm = form
