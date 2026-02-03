@@ -1,114 +1,178 @@
 LUAGUI_NAME = "Bleach Forms (New IDs)"
-LUAGUI_AUTH = "Gemini"
-LUAGUI_DESC = "Scannt 457-461 in 9ABDF4-9ABEB4"
+LUAGUI_AUTH = "BeZide"
+LUAGUI_DESC = "Scans 457-461 in ability list and swaps model suffix"
 
--- ==========================================
--- KONFIGURATION
--- ==========================================
+-- =========================================================
+-- Version checks (Epic / Steam / Steam JP)
+-- =========================================================
+local epiccheck  = 0x585B61
+local stmcheck   = epiccheck + 0x2F8
+local stmjpcheck = epiccheck + 0x2A8
+local MAGIC      = 0x7265737563697065
 
--- 1. Feste Model-Adresse (Sora P_EX100)
-local MODEL_ADDR = 0x2A268C0
+local game = 0
+local printed = false
 
--- 2. Micro Scan-Bereich
-local SCAN_START = 0x9ABDF4 
-local SCAN_END   = 0x9ABEB4 
+-- =========================================================
+-- Addresses (set per version once)
+-- =========================================================
+local MODEL_ADDR = 0
+local SCAN_START = 0
+local SCAN_END   = 0
 
--- 3. Form Definitionen (Priorität: Oben = Wichtiger)
+local function ResolveGame()
+    if game ~= 0 then return true end
+
+    if ReadLong(epiccheck) == MAGIC then
+        game = 1
+        -- EPIC (adjust if needed)
+        MODEL_ADDR = 0x2A268C0
+        SCAN_START = 0x9ABDF4
+        SCAN_END   = 0x9ABEB4
+
+        if not printed then
+            ConsolePrint(LUAGUI_NAME .. " (EPIC) - Ready")
+            printed = true
+        end
+        return true
+
+    elseif ReadLong(stmcheck) == MAGIC then
+        game = 2
+        -- STEAM GLOBAL (adjust if needed)
+        MODEL_ADDR = 0x2A268C0
+        SCAN_START = 0x9ABDF4
+        SCAN_END   = 0x9ABEB4
+
+        if not printed then
+            ConsolePrint(LUAGUI_NAME .. " (Steam) - Ready")
+            printed = true
+        end
+        return true
+
+    elseif ReadLong(stmjpcheck) == MAGIC then
+        game = 3
+        -- STEAM JP (often same as Steam Global, adjust if needed)
+        MODEL_ADDR = 0x2A268C0
+        SCAN_START = 0x9ABDF4
+        SCAN_END   = 0x9ABEB4
+
+        if not printed then
+            ConsolePrint(LUAGUI_NAME .. " (Steam JP) - Ready")
+            printed = true
+        end
+        return true
+    end
+
+    return false
+end
+
+-- =========================================================
+-- Forms (priority: top wins)
+-- =========================================================
 local FORMS = {
-    -- 1. Hollow (ID 460)
-    { name = "Hollow", suffix = "_HOLL", id = 460 },
-
-    -- 2. Bankai (ID 458)
-    { name = "Bankai", suffix = "_BANK", id = 458 },
-
-    -- 3. Masked (ID 459)
-    { name = "Masked", suffix = "_MASK", id = 459 },
-
-    -- 4. Shikai (ID 457)
-    { name = "Shikai", suffix = "_SHIK", id = 457 },
-
-    -- 5. Mugets (ID 461)
-    { name = "Mugets", suffix = "_MUGE", id = 461 }
+    { name = "Hollow",  suffix = "_HOLL", id = 460 },
+    { name = "Bankai",  suffix = "_BANK", id = 458 },
+    { name = "Masked",  suffix = "_MASK", id = 459 },
+    { name = "Shikai",  suffix = "_SHIK", id = 457 },
+    { name = "Mugetsu", suffix = "_MUGE", id = 461 }
 }
 
--- ==========================================
--- SYSTEM VARIABLEN
--- ==========================================
-
+-- =========================================================
+-- State
+-- =========================================================
 local currentWrittenSuffix = "NONE"
-local scanTimer = 0
 local activeSuffix = ""
 local activeFormName = "Base"
+local scanTimer = 0
 
 function _OnInit()
-    ConsolePrint("Bleach Mod (New IDs) gestartet.")
+    if ENGINE_TYPE == "BACKEND" then
+        game = 0
+        printed = false
+        currentWrittenSuffix = "NONE"
+        activeSuffix = ""
+        activeFormName = "Base"
+        scanTimer = 0
+    end
 end
 
 function _OnFrame()
-    -- 1. Scan Interval (alle 10 Frames)
+    if not ResolveGame() then return end
+
+    -- scan every 10 frames
     scanTimer = scanTimer + 1
-    if scanTimer > 10 then
+    if scanTimer >= 10 then
         scanTimer = 0
         ScanForAbilities()
     end
 
-    -- 2. Schreiben (Nur bei Änderung)
+    -- write only when changed
     if activeSuffix ~= currentWrittenSuffix then
         WriteModelString(activeSuffix)
-        
+
         if activeSuffix ~= "" then
             ConsolePrint("Wechsel zu: " .. activeFormName .. " (" .. activeSuffix .. ")")
         end
-        
+
         currentWrittenSuffix = activeSuffix
     end
 end
 
--- =====================================================================
--- LOGIK & SCANNER
--- =====================================================================
-
+-- =========================================================
+-- Scanner
+-- =========================================================
 function ScanForAbilities()
-    local foundForm = nil
-    local equippedIDs = {}
+    -- We don’t need a table; just track which IDs are equipped.
+    -- Equipped abilities have bit 0x8000 set (0x8000 | id).
+    local equipped457 = false
+    local equipped458 = false
+    local equipped459 = false
+    local equipped460 = false
+    local equipped461 = false
 
-    -- Micro Scan
     for addr = SCAN_START, SCAN_END, 2 do
         local val = ReadShort(addr)
-        
-        -- Check: Ist Bit 0x8000 (32768) gesetzt?
-        if val > 32768 then
-            local rawID = val - 32768
-            equippedIDs[rawID] = true
+
+        -- bit-test instead of "val > 32768"
+        if (val & 0x8000) ~= 0 then
+            local rawID = val & 0x7FFF
+
+            if rawID == 457 then equipped457 = true
+            elseif rawID == 458 then equipped458 = true
+            elseif rawID == 459 then equipped459 = true
+            elseif rawID == 460 then equipped460 = true
+            elseif rawID == 461 then equipped461 = true
+            end
         end
     end
 
-    -- Prioritäten-Check (Hollow > Bankai > Masked > Shikai > Mugetsu)
-    for _, form in ipairs(FORMS) do
-        if equippedIDs[form.id] then
-            foundForm = form
-            break 
-        end
-    end
-
-    -- Ergebnis
-    if foundForm then
-        activeSuffix = foundForm.suffix
-        activeFormName = foundForm.name
+    -- Priority: Hollow > Bankai > Masked > Shikai > Mugetsu
+    if equipped460 then
+        activeSuffix = "_HOLL"; activeFormName = "Hollow"
+    elseif equipped458 then
+        activeSuffix = "_BANK"; activeFormName = "Bankai"
+    elseif equipped459 then
+        activeSuffix = "_MASK"; activeFormName = "Masked"
+    elseif equipped457 then
+        activeSuffix = "_SHIK"; activeFormName = "Shikai"
+    elseif equipped461 then
+        activeSuffix = "_MUGE"; activeFormName = "Mugetsu"
     else
-        activeSuffix = ""
-        activeFormName = "Base"
+        activeSuffix = ""; activeFormName = "Base"
     end
 end
 
+-- =========================================================
+-- Writer
+-- =========================================================
 function WriteModelString(suffix)
     local writeAddr = MODEL_ADDR + 7
-    
+
     if suffix == "" then
         WriteByte(writeAddr, 0)
     else
         WriteString(writeAddr, suffix)
-        WriteByte(writeAddr + string.len(suffix), 0)
+        WriteByte(writeAddr + #suffix, 0)
     end
 end
 
