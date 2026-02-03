@@ -1,18 +1,18 @@
 Items:
-#- Id: 0x00F8
+- Id: 0x00F8
 #  Type: Ability
 #  Flag0: 0x01
 #  Flag1: 0xFF
-#  StatEntry: 0x0700
+  StatEntry: 0x0700
 #  Name: 0xB787
 #  Description: 0xB788
 #  Icon2: 0x03
 
-#- Id: 0x00F9
+- Id: 0x00F9
 #  Type: Ability
 #  Flag0: 0x01
 #  Flag1: 0xFE
-#  StatEntry: 0x0700
+  StatEntry: 0x0700
 #  Name: 0xB789
 #  Description: 0xB78A
 #  Icon2: 0x03
