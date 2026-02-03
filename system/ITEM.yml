@@ -34,3 +34,12 @@ Items:
   Name: 0xBD16
   Description: 0xBD17
   Icon2: 0x03
+
+- Id: 0x01CD
+  Type: Ability
+  Flag0: 0
+  Flag1: 205
+  StatEntry: 258
+  Name: 0xBD18
+  Description: 0xBD19
+  Icon2: 0x03

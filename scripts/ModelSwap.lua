@@ -1,6 +1,6 @@
 LUAGUI_NAME = "Bleach Forms (New IDs)"
 LUAGUI_AUTH = "Gemini"
-LUAGUI_DESC = "Scannt 457-460 in 9ABDF4-9ABEB4"
+LUAGUI_DESC = "Scannt 457-461 in 9ABDF4-9ABEB4"
 
 -- ==========================================
 -- KONFIGURATION
@@ -25,7 +25,10 @@ local FORMS = {
     { name = "Masked", suffix = "_MASK", id = 459 },
 
     -- 4. Shikai (ID 457)
-    { name = "Shikai", suffix = "_SHIK", id = 457 }
+    { name = "Shikai", suffix = "_SHIK", id = 457 },
+
+    -- 5. Mugets (ID 461)
+    { name = "Mugets", suffix = "_MUGE", id = 461 }
 }
 
 -- ==========================================
@@ -80,7 +83,7 @@ function ScanForAbilities()
         end
     end
 
-    -- Prioritäten-Check (Hollow > Bankai > Masked > Shikai)
+    -- Prioritäten-Check (Hollow > Bankai > Masked > Shikai > Mugetsu)
     for _, form in ipairs(FORMS) do
         if equippedIDs[form.id] then
             foundForm = form
