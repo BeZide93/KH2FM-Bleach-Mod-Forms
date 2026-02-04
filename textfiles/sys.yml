@@ -15,18 +15,18 @@
   sp: "Changes Base Form to Hollow Masked."
 
 - id: 0x3D10
-  en: "True Shikai"
-  it: "True Shikai"
-  gr: "True Shikai"
-  fr: "True Shikai"
-  sp: "True Shikai"
+  en: "Horn of Salvation"
+  it: "Horn of Salvation"
+  gr: "Horn of Salvation"
+  fr: "Horn of Salvation"
+  sp: "Horn of Salvation"
   
 - id: 0x3D11
-  en: "Changes Base Form to True Shikai."
-  it: "Changes Base Form to True Shikai."
-  gr: "Changes Base Form to True Shikai."
-  fr: "Changes Base Form to True Shikai."
-  sp: "Changes Base Form to True Shikai."
+  en: "Changes Base Form to Horn of Salvation."
+  it: "Changes Base Form to Horn of Salvation."
+  gr: "Changes Base Form to Horn of Salvation."
+  fr: "Changes Base Form to Horn of Salvation."
+  sp: "Changes Base Form to Horn of Salvation."
 
 - id: 0x3D16
   en: "Vasto Lorde"
