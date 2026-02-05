@@ -16,9 +16,18 @@ local printed = false
 -- =========================================================
 -- Addresses (set per version once)
 -- =========================================================
-local MODEL_ADDR = 0
 local SCAN_START = 0
 local SCAN_END   = 0
+
+-- List of model addresses to be updated
+local TARGET_MODELS = {
+    0x2A268C0, -- P_EX100
+    0x2A2E840, -- P_EX100_NM
+    0x2A3DD20, -- P_EX100_TR
+    0x2A3DD80, -- P_EX100_WI
+    0x2A49D20, -- P_EX100_WM
+    0x2A4E3A0  -- P_EX100_XM
+}
 
 local function ResolveGame()
     if game ~= 0 then return true end
@@ -26,7 +35,6 @@ local function ResolveGame()
     if ReadLong(epiccheck) == MAGIC then
         game = 1
         -- EPIC (adjust if needed)
-        MODEL_ADDR = 0x2A268C0
         SCAN_START = 0x9ABDF4
         SCAN_END   = 0x9ABEB4
 
@@ -39,7 +47,6 @@ local function ResolveGame()
     elseif ReadLong(stmcheck) == MAGIC then
         game = 2
         -- STEAM GLOBAL (adjust if needed)
-        MODEL_ADDR = 0x2A268C0
         SCAN_START = 0x9ABDF4
         SCAN_END   = 0x9ABEB4
 
@@ -52,7 +59,6 @@ local function ResolveGame()
     elseif ReadLong(stmjpcheck) == MAGIC then
         game = 3
         -- STEAM JP (often same as Steam Global, adjust if needed)
-        MODEL_ADDR = 0x2A268C0
         SCAN_START = 0x9ABDF4
         SCAN_END   = 0x9ABEB4
 
@@ -166,13 +172,15 @@ end
 -- Writer
 -- =========================================================
 function WriteModelString(suffix)
-    local writeAddr = MODEL_ADDR + 7
+    for _, modelBaseAddr in ipairs(TARGET_MODELS) do
+        local writeAddr = modelBaseAddr + 7
 
-    if suffix == "" then
-        WriteByte(writeAddr, 0)
-    else
-        WriteString(writeAddr, suffix)
-        WriteByte(writeAddr + #suffix, 0)
+        if suffix == "" then
+            WriteByte(writeAddr, 0)
+        else
+            WriteString(writeAddr, suffix)
+            WriteByte(writeAddr + #suffix, 0)
+        end
     end
 end
 
